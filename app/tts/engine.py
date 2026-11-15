@@ -81,6 +81,7 @@ class SileroTTSEngine:
             model="silero_tts",
             language=self.language,
             speaker=self.model_id,
+            trust_repo=True,
         )
         if len(result) == 5:
             model, symbols, _sr, _example_text, apply_tts = result
