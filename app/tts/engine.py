@@ -41,8 +41,7 @@ class SileroTTSEngine:
         if torch.cuda.is_available():
             return torch.device("cuda")
         return torch.device("cpu")
-
-    def load(self):
+def load(self):
         try:
             import torch
         except ImportError as e:
@@ -73,6 +72,25 @@ class SileroTTSEngine:
         self.models_dir.mkdir(parents=True, exist_ok=True)
         os.environ["TORCH_HOME"] = str(self.models_dir.resolve())
 
+        # --- FIX: Programmatically bypass the PyTorch interactive trust prompt ---
+        # 1. Force PyTorch to recognize the custom directory immediately
+        hub_dir = self.models_dir.resolve() / "hub"
+        torch.hub.set_dir(str(hub_dir))
+        
+        # 2. Inject the Silero repository into PyTorch's trusted_list file
+        hub_dir.mkdir(parents=True, exist_ok=True)
+        trusted_list_path = hub_dir / "trusted_list"
+        
+        trusted_repos = []
+        if trusted_list_path.exists():
+            with open(trusted_list_path, "r") as f:
+                trusted_repos = f.read().splitlines()
+                
+        if "snakers4_silero-models" not in trusted_repos:
+            with open(trusted_list_path, "a") as f:
+                f.write("snakers4_silero-models\n")
+        # -----------------------------------------------------------------------
+
         log.info("Silero model cache directory: %s", self.models_dir.resolve())
 
         # One hub.load call: repo may return 5 values (new API) or 2 (old API)
@@ -99,6 +117,7 @@ class SileroTTSEngine:
             self._apply_tts = None
             self._symbols = None
             log.info("Silero loaded (model.apply_tts API).")
+
 
     @staticmethod
     def _split_long_text(text: str, max_chars: int) -> list[str]:
