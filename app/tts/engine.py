@@ -41,7 +41,8 @@ class SileroTTSEngine:
         if torch.cuda.is_available():
             return torch.device("cuda")
         return torch.device("cpu")
-def load(self):
+    
+    def load(self):
         try:
             import torch
         except ImportError as e:
